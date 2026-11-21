@@ -120,7 +120,7 @@ CREATE TABLE alerts (
 
 -- Note: these are demo hashes. The Flask app will create real ones.
 INSERT INTO users (full_name, email, password_hash) VALUES
-('Sara Ahmed',   'sara@mail.com',  'demo_hash_sara'),
+('Mariam Soumaf',   'Mariam@mail.com',  'demo_hash_Mariam'),
 ('Ahmad Ali',    'ahmad@mail.com', 'demo_hash_ahmad'),
 ('Lina Hassan',  'lina@mail.com',  'demo_hash_lina');
 

@@ -149,7 +149,7 @@ JOIN   monitors m ON c.monitor_id = m.monitor_id
 JOIN   projects p ON m.project_id = p.project_id
 JOIN   users    u ON p.owner_id   = u.user_id
 WHERE  c.is_up = FALSE
-  AND  u.email = 'sara@mail.com'
+  AND  u.email = 'Mariam@mail.com'
 ORDER  BY c.checked_at DESC;
 
 -- C3) Open incidents right now, with how long they have been down
@@ -190,7 +190,7 @@ SELECT monitor_name, project_name, total_checks, uptime_percent, avg_response_ms
 FROM   v_monitor_uptime
 ORDER  BY uptime_percent ASC;
 
--- C8) Use the PROCEDURE: Sara's dashboard
+-- C8) Use the PROCEDURE: Mariam's dashboard
 CALL get_user_dashboard(1);
 
 
@@ -203,7 +203,7 @@ INSERT INTO checks (monitor_id, checked_at, status_code, response_ms, is_up, err
 VALUES (1, NOW(), 503, 120, FALSE, 'Service Unavailable');
 
 SELECT * FROM incidents WHERE monitor_id = 1;   -- new incident: status = open
-SELECT * FROM alerts ORDER BY alert_id DESC;     -- new alerts for Sara and Ahmad
+SELECT * FROM alerts ORDER BY alert_id DESC;     -- new alerts for Mariam and Ahmad
 
 -- D2) Home Page is UP again -> trigger closes the incident
 INSERT INTO checks (monitor_id, checked_at, status_code, response_ms, is_up)
