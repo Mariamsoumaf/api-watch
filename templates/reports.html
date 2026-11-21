@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Reports{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Reports</h1>
+    <p>Search all checks and compare your monitors. Every table here is built with SQL JOINs.</p>
+  </div>
+</div>
+
+<!-- Search -->
+<div class="card">
+  <div class="card-head"><h2><i class="ti ti-search"></i> Search checks</h2><span class="muted" style="font-size:12.5px">{{ results|length }} result(s)</span></div>
+  <form class="filters" method="get">
+    <input class="grow" type="search" name="q" value="{{ f.q }}" placeholder="Monitor, project or error message...">
+    <input type="date" name="date_from" value="{{ f.date_from }}" title="From">
+    <input type="date" name="date_to" value="{{ f.date_to }}" title="To">
+    <select name="only_failed">
+      <option value="1" {{ 'selected' if f.only_failed == '1' }}>Failed checks only</option>
+      <option value="0" {{ 'selected' if f.only_failed == '0' }}>All checks</option>
+    </select>
+    <button class="btn primary"><i class="ti ti-search"></i> Search</button>
+  </form>
+  <div class="table-wrap" style="max-height:380px;overflow-y:auto">
+    <table>
+      <thead><tr><th>Time</th><th>Monitor</th><th>Project</th><th>Owner</th><th>Result</th><th>HTTP</th><th>Error</th></tr></thead>
+      <tbody>
+      {% for r in results %}
+        <tr>
+          <td class="mono">{{ r.checked_at.strftime('%d %b %H:%M') }}</td>
+          <td><a class="cell-title" href="{{ url_for('monitor_detail', monitor_id=r.monitor_id) }}">{{ r.monitor_name }}</a></td>
+          <td>{{ r.project_name }}</td>
+          <td>{{ r.owner_name }}</td>
+          <td><span class="pill {{ 'up' if r.is_up else 'down' }}">{{ 'Up' if r.is_up else 'Down' }}</span></td>
+          <td class="mono">{{ r.status_code or '-' }}</td>
+          <td class="cell-sub">{{ r.error_message or '' }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="7" class="empty">No checks match your search.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="grid-2 section-gap">
+  <!-- Uptime (VIEW) -->
+  <div class="card">
+    <div class="card-head"><h2><i class="ti ti-heartbeat"></i> Uptime by monitor</h2><span class="muted mono">v_monitor_uptime</span></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Monitor</th><th>Uptime</th><th></th><th>Avg</th><th>Checks</th></tr></thead>
+        <tbody>
+        {% for u in uptime %}
+          {% set pct = u.uptime_percent %}
+          <tr>
+            <td><a class="cell-title" href="{{ url_for('monitor_detail', monitor_id=u.monitor_id) }}">{{ u.monitor_name }}</a>
+              <div class="cell-sub">{{ u.project_name }}</div></td>
+            <td style="width:40%"><div class="bar"><span class="{{ 'low' if pct is not none and pct < 80 else ('mid' if pct is not none and pct < 99 else '') }}" style="width: {{ pct or 0 }}%"></span></div></td>
+            <td class="mono">{{ pct ~ '%' if pct is not none else '-' }}</td>
+            <td class="mono">{{ u.avg_response_ms ~ ' ms' if u.avg_response_ms is not none else '-' }}</td>
+            <td class="mono">{{ u.total_checks }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Most incidents -->
+  <div class="card">
+    <div class="card-head"><h2><i class="ti ti-flame"></i> Most incidents</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Monitor</th><th>Incidents</th><th>Downtime</th></tr></thead>
+        <tbody>
+        {% for r in most_incidents %}
+          <tr>
+            <td><span class="cell-title">{{ r.monitor_name }}</span><div class="cell-sub">{{ r.project_name }}</div></td>
+            <td class="mono">{{ r.total_incidents }}</td>
+            <td class="mono">{{ r.total_minutes|duration }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Team -->
+<div class="card section-gap">
+  <div class="card-head"><h2><i class="ti ti-users"></i> Project teams</h2></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Project</th><th>Member</th><th>Email</th><th>Role</th></tr></thead>
+      <tbody>
+      {% for t in team %}
+        <tr>
+          <td class="cell-title">{{ t.project_name }}</td>
+          <td>{{ t.full_name }}</td>
+          <td class="muted">{{ t.email }}</td>
+          <td><span class="pill {{ t.role }}">{{ t.role }}</span></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

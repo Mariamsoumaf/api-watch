@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}{{ m.name }}{% endblock %}
+
+{% block content %}
+{% set s = monitor_state(m) %}
+<a class="back" href="{{ url_for('monitors') }}"><i class="ti ti-arrow-left"></i> All monitors</a>
+
+<div class="page-head detail-head">
+  <div>
+    <div class="detail-title">
+      <span class="dot {{ s }}"></span>
+      <h1>{{ m.name }}</h1>
+      <span class="pill {{ s }}">{{ s|capitalize }}</span>
+    </div>
+    <p><span class="mono">{{ m.url }}</span> · {{ m.project_name }} · checked every {{ m.interval_sec }}s</p>
+  </div>
+  <div class="actions">
+    <form method="post" action="{{ url_for('check_now', monitor_id=m.monitor_id) }}">
+      <button class="btn"><i class="ti ti-refresh"></i> Check now</button>
+    </form>
+    {% if m.role == 'owner' %}
+      <form method="post" action="{{ url_for('toggle_monitor', monitor_id=m.monitor_id) }}">
+        <button class="btn"><i class="ti {{ 'ti-player-pause' if m.is_active else 'ti-player-play' }}"></i>
+          {{ 'Pause' if m.is_active else 'Resume' }}</button>
+      </form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="stats">
+  <div class="card stat">
+    <div class="stat-icon green"><i class="ti ti-heartbeat"></i></div>
+    <div><div class="stat-value">{{ stats.uptime_percent ~ '%' if stats.uptime_percent is not none else '-' }}</div><div class="stat-label">Uptime</div></div>
+  </div>
+  <div class="card stat">
+    <div class="stat-icon amber"><i class="ti ti-bolt"></i></div>
+    <div><div class="stat-value">{{ stats.avg_response_ms ~ ' ms' if stats.avg_response_ms is not none else '-' }}</div><div class="stat-label">Average response</div></div>
+  </div>
+  <div class="card stat">
+    <div class="stat-icon"><i class="ti ti-list-check"></i></div>
+    <div><div class="stat-value">{{ stats.total_checks }}</div><div class="stat-label">Total checks</div></div>
+  </div>
+  <div class="card stat">
+    <div class="stat-icon red"><i class="ti ti-alert-triangle"></i></div>
+    <div><div class="stat-value">{{ incidents|length }}</div><div class="stat-label">Incidents</div></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head"><h2>Response time</h2><span class="muted" style="font-size:12.5px">Last 50 checks · red = down</span></div>
+  <div class="chart-box">
+    {% if checks %}<canvas id="responseChart"></canvas>
+    {% else %}<div class="empty">No checks yet. Press "Check now".</div>{% endif %}
+  </div>
+</div>
+
+<div class="grid-2 section-gap">
+  <div class="card">
+    <div class="card-head"><h2>Recent checks</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Time</th><th>Result</th><th>HTTP</th><th>Response</th><th>Error</th></tr></thead>
+        <tbody>
+        {% for c in checks[:15] %}
+          <tr>
+            <td class="mono">{{ c.checked_at.strftime('%d %b %H:%M:%S') }}</td>
+            <td><span class="pill {{ 'up' if c.is_up else 'down' }}">{{ 'Up' if c.is_up else 'Down' }}</span></td>
+            <td class="mono">{{ c.status_code or '-' }}</td>
+            <td class="mono">{{ c.response_ms ~ ' ms' if c.response_ms is not none else '-' }}</td>
+            <td class="cell-sub">{{ c.error_message or '' }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="5" class="empty">No checks yet.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>Incidents</h2></div>
+    {% for i in incidents %}
+      <div class="feed-item">
+        <div class="feed-icon {{ 'red' if i.status == 'open' }}"><i class="ti {{ 'ti-flame' if i.status == 'open' else 'ti-circle-check' }}"></i></div>
+        <div style="flex:1">
+          <div style="display:flex;justify-content:space-between;gap:8px">
+            <span class="mon-name">#{{ i.incident_id }} · {{ i.minutes|duration }}</span>
+            <span class="pill {{ i.status }}">{{ i.status }}</span>
+          </div>
+          <div class="mon-meta">From {{ i.started_at.strftime('%d %b %H:%M') }}
+            {% if i.resolved_at %} to {{ i.resolved_at.strftime('%d %b %H:%M') }}{% endif %}
+            · {{ i.alerts_sent }} alert(s) sent</div>
+        </div>
+      </div>
+    {% else %}
+      <div class="empty">No incidents. Great!</div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if checks %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+  const data = {{ chart_data|tojson }};
+  new Chart(document.getElementById('responseChart'), {
+    type: 'line',
+    data: {
+      labels: data.labels,
+      datasets: [{
+        label: 'Response (ms)',
+        data: data.values,
+        borderColor: '#6366f1',
+        backgroundColor: 'rgba(99,102,241,.08)',
+        fill: true,
+        tension: .35,
+        spanGaps: true,
+        pointRadius: 4,
+        pointBackgroundColor: data.up.map(u => u ? '#10b981' : '#ef4444'),
+        pointBorderColor: data.up.map(u => u ? '#10b981' : '#ef4444')
+      }]
+    },
+    options: {
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, title: { display: true, text: 'ms' }, grid: { color: '#eef1f5' } },
+        x: { grid: { display: false }, ticks: { maxTicksLimit: 8 } }
+      }
+    }
+  });
+</script>
+{% endif %}
+{% endblock %}

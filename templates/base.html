@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}API Watch{% endblock %} · API Watch</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo"><i class="ti ti-activity-heartbeat"></i></div>
+      <div>
+        <div class="brand-name">API Watch</div>
+        <div class="brand-sub">Uptime monitoring</div>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <a href="{{ url_for('dashboard') }}" class="{{ 'active' if active == 'dashboard' }}">
+        <i class="ti ti-layout-dashboard"></i> Dashboard</a>
+      <a href="{{ url_for('monitors') }}" class="{{ 'active' if active == 'monitors' }}">
+        <i class="ti ti-world-www"></i> Monitors</a>
+      <a href="{{ url_for('reports') }}" class="{{ 'active' if active == 'reports' }}">
+        <i class="ti ti-report-analytics"></i> Reports</a>
+    </nav>
+
+    <div class="side-foot">
+      <form method="post" action="{{ url_for('switch_user') }}">
+        <label for="user-switch">Signed in as</label>
+        <select id="user-switch" name="user_id" onchange="this.form.submit()">
+          {% for u in g.users %}
+            <option value="{{ u.user_id }}" {{ 'selected' if u.user_id == g.user.user_id }}>{{ u.full_name }}</option>
+          {% endfor %}
+        </select>
+      </form>
+      <div class="live"><span class="dot up"></span> Checker running</div>
+    </div>
+  </aside>
+
+  <main class="main">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, msg in messages %}
+        <div class="flash {{ category }}">
+          <i class="ti {{ 'ti-circle-check' if category == 'success' else 'ti-alert-circle' }}"></i> {{ msg }}
+        </div>
+      {% endfor %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+</div>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

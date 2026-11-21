@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block head %}<meta http-equiv="refresh" content="60">{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Hello, {{ g.user.full_name.split(' ')[0] }} 👋</h1>
+    <p>Here is the health of your websites and APIs right now.</p>
+  </div>
+  <a class="btn primary" href="{{ url_for('monitors') }}"><i class="ti ti-plus"></i> Add monitor</a>
+</div>
+
+<div class="stats">
+  <div class="card stat">
+    <div class="stat-icon"><i class="ti ti-folders"></i></div>
+    <div><div class="stat-value">{{ stats.my_projects }}</div><div class="stat-label">Projects</div></div>
+  </div>
+  <div class="card stat">
+    <div class="stat-icon"><i class="ti ti-world-www"></i></div>
+    <div><div class="stat-value">{{ stats.my_monitors }}</div><div class="stat-label">Monitors</div></div>
+  </div>
+  <div class="card stat">
+    <div class="stat-icon {{ 'red' if stats.open_incidents else 'green' }}"><i class="ti ti-alert-triangle"></i></div>
+    <div><div class="stat-value">{{ stats.open_incidents }}</div><div class="stat-label">Open incidents</div></div>
+  </div>
+  <div class="card stat">
+    <div class="stat-icon green"><i class="ti ti-heartbeat"></i></div>
+    <div>
+      <div class="stat-value">{{ uptime.avg_uptime if uptime and uptime.avg_uptime is not none else '-' }}{{ '%' if uptime and uptime.avg_uptime is not none }}</div>
+      <div class="stat-label">Average uptime</div>
+    </div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-head">
+      <h2>Monitors status</h2>
+      <span class="muted" style="font-size:12.5px">Auto refresh every 60s</span>
+    </div>
+    {% for m in monitors %}
+      {% set s = monitor_state(m) %}
+      <a class="mon-row" href="{{ url_for('monitor_detail', monitor_id=m.monitor_id) }}">
+        <span class="dot {{ s }}"></span>
+        <div>
+          <div class="mon-name">{{ m.name }}</div>
+          <div class="mon-meta">{{ m.project_name }} · <span class="mono">{{ m.url }}</span></div>
+        </div>
+        <span class="pill {{ s }}">{{ s|capitalize }}</span>
+        <div class="mon-ms">
+          <div class="mono">{{ m.response_ms ~ ' ms' if m.response_ms is not none else '-' }}</div>
+          <div class="mon-meta">{{ m.checked_at|ago }}</div>
+        </div>
+      </a>
+    {% else %}
+      <div class="empty">No monitors yet. <a href="{{ url_for('monitors') }}" style="color:var(--accent)">Add your first one</a>.</div>
+    {% endfor %}
+  </div>
+
+  <div class="stack">
+    <div class="card">
+      <div class="card-head"><h2>Open incidents</h2></div>
+      {% for i in open_incidents %}
+        <a class="feed-item" href="{{ url_for('monitor_detail', monitor_id=i.monitor_id) }}">
+          <div class="feed-icon red"><i class="ti ti-flame"></i></div>
+          <div>
+            <div class="mon-name">{{ i.monitor_name }} is down</div>
+            <div class="mon-meta">{{ i.project_name }} · for {{ i.minutes_down|duration }}</div>
+          </div>
+        </a>
+      {% else %}
+        <div class="empty"><i class="ti ti-mood-happy" style="font-size:26px;color:var(--up)"></i><br>All systems are working.</div>
+      {% endfor %}
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>My recent alerts</h2></div>
+      {% for a in alerts %}
+        <div class="feed-item">
+          <div class="feed-icon"><i class="ti {{ 'ti-brand-telegram' if a.channel == 'telegram' else 'ti-mail' }}"></i></div>
+          <div>
+            <div class="mon-name">{{ a.monitor_name }}</div>
+            <div class="mon-meta">{{ a.project_name }} · {{ a.channel }} · {{ a.sent_at|ago }}</div>
+          </div>
+        </div>
+      {% else %}
+        <div class="empty">No alerts yet.</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

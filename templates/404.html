@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Not found{% endblock %}
+{% block content %}
+<div class="card empty" style="padding:60px">
+  <i class="ti ti-map-question" style="font-size:42px;color:var(--accent)"></i>
+  <h2>Page not found</h2>
+  <p>This page does not exist, or you are not a member of this project.</p>
+  <a class="btn primary" href="{{ url_for('dashboard') }}">Back to dashboard</a>
+</div>
+{% endblock %}
